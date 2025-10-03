@@ -3,6 +3,8 @@ from http import HTTPStatus
 import secrets
 from typing import Dict, Any
 
+from flasgger import Swagger
+
 from flask import Flask
 from flask_restx import Api, Resource
 from flask_sqlalchemy import SQLAlchemy
@@ -26,6 +28,13 @@ def create_app(app_config: Dict[str, Any], additional_config: Dict[str, Any]) ->
     app = Flask(__name__)
     app.config["SECRET_KEY"] = secrets.token_hex(16)
     app.config = {**app.config, **app_config}
+    app.config['SWAGGER'] = {
+        'ui_params': {
+            'docExpansion': 'none',
+        }
+    }
+
+    Swagger(app)
 
     _init_db(app)
     register_routes(app)
