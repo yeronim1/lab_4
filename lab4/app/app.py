@@ -1,7 +1,9 @@
 import os
-from waitress import serve
-import yaml
 import sys
+import yaml
+import boto3
+import botocore
+from waitress import serve
 from sqlalchemy import text, inspect
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -17,6 +19,15 @@ PRODUCTION = "production"
 FLASK_ENV = "FLASK_ENV"
 ADDITIONAL_CONFIG = "ADDITIONAL_CONFIG"
 
+def get_parameter_from_ssm(parameter_name):
+    ssm = boto3.client('ssm', region_name="eu-north-1")
+    try:
+        param = ssm.get_parameter(Name=parameter_name, WithDecryption=True)
+        return param["Parameter"]["Value"]
+    except botocore.exceptions.ClientError as e:
+        print(f"Error fetching parameter {parameter_name} from SSM: {e}")
+        return None
+
 def _normalize_mysql_uri(uri: str) -> str:
     if uri and uri.startswith("mysql://"):
         return "mysql+pymysql://" + uri[len("mysql://"):]
@@ -30,13 +41,17 @@ if __name__ == "__main__":
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
     additional_cfg = cfg.get(ADDITIONAL_CONFIG, {})
+    additional_cfg["MYSQL_ROOT_USER"] = get_parameter_from_ssm("database_user")
+    additional_cfg["MYSQL_ROOT_PASSWORD"] = get_parameter_from_ssm("database_password")
 
     if flask_env == DEVELOPMENT:
-        config_data = dict(cfg.get(DEVELOPMENT, {}))  
+        config_data = dict(cfg.get(DEVELOPMENT, {}))
+        config_data["SQLALCHEMY_DATABASE_URI"] = get_parameter_from_ssm("database_uri")
         debug = True
         port = DEVELOPMENT_PORT
     elif flask_env == PRODUCTION:
-        config_data = dict(cfg.get(PRODUCTION, {}))   
+        config_data = dict(cfg.get(PRODUCTION, {}))
+        config_data["SQLALCHEMY_DATABASE_URI"] = get_parameter_from_ssm("database_uri")
         debug = False
         port = PRODUCTION_PORT
     else:

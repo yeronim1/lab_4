@@ -5,12 +5,12 @@ COMMON: &common
 development:
   <<: *common
   DEBUG: True
-  SQLALCHEMY_DATABASE_URI: 'mysql+pymysql://admin:admin123@database-1.cvkc4s8ketvv.eu-north-1.rds.amazonaws.com:3306/lab4'
+  SQLALCHEMY_DATABASE_URI: null
 
 production:
   <<: *common
-  SQLALCHEMY_DATABASE_URI: 'mysql+pymysql://admin:admin123@database-1.cvkc4s8ketvv.eu-north-1.rds.amazonaws.com:3306/lab4'
+  SQLALCHEMY_DATABASE_URI: null
 
 ADDITIONAL_CONFIG:
-  MYSQL_ROOT_USER: admin
-  MYSQL_ROOT_PASSWORD: admin123
+  MYSQL_ROOT_USER: null
+  MYSQL_ROOT_PASSWORD: null
